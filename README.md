@@ -2,8 +2,9 @@ Ur wech pellgarget ar raktres, mont e-barzh hag ober : npm install
 
 Evit loc'hañ ar servijer :
 
-cd bin
-node www
+`cd bin`
+
+`node www`
 
 An hentoù (routes) a zo en doser routes
 
