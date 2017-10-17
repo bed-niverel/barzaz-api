@@ -42,7 +42,33 @@ router.get('/latestSongs', function(req, res, next) {
 	});
 })
 
-router.put('/song', function(req, res, next) {
+router.put('/song/edit', function(req, res, next) {
+	
+	var title = req.body.title;
+	var artist = req.body.artist;
+	var content = req.body.content;
+	var id = req.body.id;
+	console.log(id);
+	console.log(title, artist, content);
+
+	client.update({  
+	  index: 'music',
+	  type: 'songs',
+	  id: id,
+	  body: {
+	  	doc: {
+				"title": title,
+		    "artist": artist,
+		    "content": content
+	  	}    
+	  }
+	},function(err,resp,status) {
+			console.log(err, resp, status);
+	    res.send();																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										
+	});
+})
+
+router.put('/song/add', function(req, res, next) {
 	
 	var title = req.body.title;
 	var artist = req.body.artist;
