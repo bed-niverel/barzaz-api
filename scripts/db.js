@@ -13,20 +13,115 @@ var text = '';
 
 
 
+
+/*
+client.search({
+    index: 'music',
+    type: 'songs',
+    body:{
+        "query": {
+          "query_string" : {
+            "fields" : [
+               "title",
+               "artist",
+               "content"
+            ],
+            "query" : "an hini a garan",
+            "default_operator" : "AND"
+         }
+        }
+      }
+  }).then(function (resp) {
+    console.log(JSON.stringify(resp));
+      //var hits = resp.hits.hits;
+      //res.send(resp);
+  }, function (err) {
+      console.trace(err.message);
+  });
+*/
+
+
+
+client.search({
+    index: 'music',
+    type: 'songs',
+    body:{
+       "size": 1,
+       "query": {
+          "function_score": {
+             "functions": [
+                {
+                   "random_score": {
+                      "seed": Date.now()
+                   }
+                }
+             ]
+          }
+       }
+    }
+  }).then(function (resp) {
+    console.log(JSON.stringify(resp));
+      //var hits = resp.hits.hits;
+      //res.send(resp);
+  }, function (err) {
+      console.trace(err.message);
+  });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //deleteIndex();
 //createIndex();
-//addMapping();
-addSongs();
+//addMappingForTitles();
+//addMappingForArtists();
+//addSongs();
 
 
 
 //ouzhpenna~n ar mapping
-function addMapping() {
+function addMappingForTitles() {
   client.indices.putMapping({
     index: 'music',
     type: 'songs',
     body: {
       "properties": {
+        "title": {
+          "type": "text",
+          "analyzer": "my_analyzer",
+          "search_analyzer": "whitespace"
+        }
+      }
+    }
+  })
+}
+
+//ouzhpenna~n ar mapping
+function addMappingForArtists() {
+  client.indices.putMapping({
+    index: 'music',
+    type: 'songs',
+    body: {
+      "properties": {
+        "title": {
+          "type": "text",
+          "analyzer": "my_analyzer",
+          "search_analyzer": "whitespace"
+        },
+        "artist": {
+          "type": "text",
+          "analyzer": "my_analyzer",
+          "search_analyzer": "whitespace"
+        },
         "content": {
           "type": "text",
           "analyzer": "my_analyzer",
@@ -54,14 +149,17 @@ function createIndex() {
         "analysis": {
           "analyzer": {
             "my_analyzer": {
-              "tokenizer": "my_tokenizer"
+              "tokenizer": "my_tokenizer",
+                "filter": [
+                  "lowercase"
+                ]
             }
           },
           "tokenizer": {
             "my_tokenizer": {
               "type": "ngram",
               "min_gram": 2,
-              "max_gram": 8,
+              "max_gram": 10,
               "token_chars": [
                 "letter",
                 "digit"
@@ -80,8 +178,8 @@ function createIndex() {
 }
 
 
-
 /*
+
 client.bulk({
   body: [
     // action description
@@ -93,12 +191,13 @@ client.bulk({
     { name: 'Denez Abernot' },
     { index:  { _index: 'music', _type: 'artists'} },
      // the document to index
-    { name: 'Dan Ar Braz' }    
+    { name: 'Marion Arnaud' }    
   ]
 }, function (err, resp) {
   // ...
 });
 */
+
 
 
 
@@ -147,5 +246,26 @@ function addSongs() {
   },function(err,resp,status) {
       console.log(resp);
   });
+
+
+
+  text = fs.readFileSync('./kanaouennoù/anhiniagaran.txt', "utf8");
+  client.index({  
+    index: 'music',
+    type: 'songs',
+    body: {
+      "title": "An Hini A Garan",
+      "artist": "Denez Prigent",
+      "content": text,
+      "date": new Date()
+    }
+  },function(err,resp,status) {
+      console.log(resp);
+  });
+
+
+
+
+
 }
 

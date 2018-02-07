@@ -47,9 +47,10 @@ router.put('/song/edit', function(req, res, next) {
 	var title = req.body.title;
 	var artist = req.body.artist;
 	var content = req.body.content;
+	var link = req.body.link;
 	var id = req.body.id;
 	console.log(id);
-	console.log(title, artist, content);
+	console.log(title, artist, link, content);
 
 	client.update({  
 	  index: 'music',
@@ -59,6 +60,7 @@ router.put('/song/edit', function(req, res, next) {
 	  	doc: {
 				"title": title,
 		    "artist": artist,
+		    "link": link,
 		    "content": content
 	  	}    
 	  }
@@ -73,13 +75,15 @@ router.put('/song/add', function(req, res, next) {
 	var title = req.body.title;
 	var artist = req.body.artist;
 	var content = req.body.content;
-	console.log(title, artist, content);
+	var link = req.body.link;
+	console.log(title, artist, link, content);
 	client.index({  
 	  index: 'music',
 	  type: 'songs',
 	  body: {
 	    "title": title,
 	    "artist": artist,
+	   	"link": link,
 	    "content": content,
 	    "date": new Date()
 	  }
@@ -135,17 +139,22 @@ router.get('/findSongsByArtist', function(req, res, next) {
 	});
 });
 
-router.get('/autocomplete', function(req, res, next) {
+router.get('/autocompleteTitles', function(req, res, next) {
 	var content = req.query.term;
+	content = content.toLowerCase();
 
 	client.search({
 	  index: 'music',
 	  type: 'songs',
 	  body: {
 	    query: {
-	      match: {
-	        content: content
-	      }
+        "query_string" : {
+          "fields" : [
+             "title"
+          ],
+          "query" : content,
+          "default_operator" : "AND"
+        }
 	    }
 	  }
 	}).then(function (resp) {
@@ -156,6 +165,82 @@ router.get('/autocomplete', function(req, res, next) {
 	});
 
 });
+
+
+router.get('/autocomplete2', function(req, res, next) {
+	var content = req.query.term;
+	content = content.toLowerCase();
+
+	console.log(content);
+
+	client.search({
+	  index: 'music',
+	  type: 'songs',
+	  body:{
+			  "query": {
+			  	/*
+			    "multi_match" : {
+			      "query":    content, 
+			      "fields": [ "title", "artist","content"] 
+			    }
+			    */
+          "query_string" : {
+            "fields" : [
+               "title^5",
+               "artist^5",
+               "content"
+            ],
+            "query" : content,
+            "default_operator" : "AND"
+         }
+
+			  }
+			  /*
+			  ,
+			  "highlight": {
+            "fields" : {
+                "title" : {},
+                //"title": { "fragment_size" :content.length},
+                "artist": {},
+                "content": {}
+
+            }
+        }*/
+			}
+
+	}).then(function (resp) {
+	    //var hits = resp.hits.hits;
+	    console.log(JSON.stringify(resp.hits));
+	    res.send(resp);
+	}, function (err) {
+	    console.trace(err.message);
+	});
+
+});
+
+/*
+
+curl -XGET 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "multi_match" : {
+      "query":    "Denez peskig", 
+      "fields": [ "title", "artist" ] 
+    }
+  },
+  "highlight": {
+            "fields" : {
+                "title" : {},
+                 "artist": {}
+            }
+        }
+
+}
+'
+
+*/
+
+
 
 
 /* GET users listing. */
@@ -259,6 +344,8 @@ router.get('/artistsByAlphabet/:letter', function(req, res, next) {
 
 router.get('/song/:songid', function(req, res, next) {
 	var title = req.params.songid;
+	title = title.toLowerCase();
+	console.log(title);
 	client.search({
 	  index: 'music',
 	  type: 'songs',
@@ -270,6 +357,7 @@ router.get('/song/:songid', function(req, res, next) {
 	    }
 	  }
 	}).then(function (resp) {
+			console.log(resp);
 	    var hits = resp.hits.hits;
 	    res.send(resp);
 	}, function (err) {
