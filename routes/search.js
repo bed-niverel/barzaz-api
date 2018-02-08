@@ -218,6 +218,35 @@ router.get('/autocomplete2', function(req, res, next) {
 
 });
 
+router.get('/random', function(req, res, next) {
+
+	client.search({
+	  index: 'music',
+	  type: 'songs',
+	  body:{
+			"size": 1,
+			"query": {
+			  "function_score": {
+					"functions": [
+						{
+						  "random_score": {
+						  	"seed": Date.now()
+						  }
+						}
+					]
+			  }
+			}
+		}
+	}).then(function (resp) {
+		console.log(resp);
+    var hits = resp.hits.hits;
+    res.send(resp);
+	}, function (err) {
+		console.trace(err.message);
+	});
+
+})
+
 /*
 
 curl -XGET 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d'
@@ -344,7 +373,7 @@ router.get('/artistsByAlphabet/:letter', function(req, res, next) {
 
 router.get('/song/:songid', function(req, res, next) {
 	var title = req.params.songid;
-	title = title.toLowerCase();
+	//title = title.toLowerCase();
 	console.log(title);
 	client.search({
 	  index: 'music',
@@ -352,7 +381,7 @@ router.get('/song/:songid', function(req, res, next) {
 	  body: {
 	    query: {
 	      match: {
-	        title: title
+	        "title.exact": title
 	      }
 	    }
 	  }

@@ -41,7 +41,7 @@ client.search({
 */
 
 
-
+/*
 client.search({
     index: 'music',
     type: 'songs',
@@ -66,7 +66,7 @@ client.search({
   }, function (err) {
       console.trace(err.message);
   });
-
+*/
 
 
 
@@ -82,14 +82,13 @@ client.search({
 
 //deleteIndex();
 //createIndex();
-//addMappingForTitles();
-//addMappingForArtists();
+//addMapping();
 //addSongs();
 
 
 
 //ouzhpenna~n ar mapping
-function addMappingForTitles() {
+function addMapping() {
   client.indices.putMapping({
     index: 'music',
     type: 'songs',
@@ -98,24 +97,12 @@ function addMappingForTitles() {
         "title": {
           "type": "text",
           "analyzer": "my_analyzer",
-          "search_analyzer": "whitespace"
-        }
-      }
-    }
-  })
-}
-
-//ouzhpenna~n ar mapping
-function addMappingForArtists() {
-  client.indices.putMapping({
-    index: 'music',
-    type: 'songs',
-    body: {
-      "properties": {
-        "title": {
-          "type": "text",
-          "analyzer": "my_analyzer",
-          "search_analyzer": "whitespace"
+          "search_analyzer": "whitespace",
+          "fields": {
+            "exact": { 
+              "type":  "keyword"
+            }
+          }
         },
         "artist": {
           "type": "text",
