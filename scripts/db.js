@@ -1,5 +1,7 @@
 var fs = require('fs');
 var elasticsearch = require('elasticsearch');
+var slugify = require('slugify');
+
 
 var Bluebird = require('bluebird');
 var client = new elasticsearch.Client({
@@ -83,7 +85,7 @@ client.search({
 //deleteIndex();
 //createIndex();
 //addMapping();
-//addSongs();
+addSongs();
 
 
 
@@ -103,6 +105,10 @@ function addMapping() {
               "type":  "keyword"
             }
           }
+        },
+        "slug": {
+          "type": "text",
+          "analyzer": "keyword"
         },
         "artist": {
           "type": "text",
@@ -196,6 +202,7 @@ function addSongs() {
     type: 'songs',
     body: {
       "title": "Peskig arc'hant",
+      "slug": slugify("Peskig arc'hant"),
       "artist": "Naig Rozmor",
       "content": text,
       "date": new Date()
@@ -212,6 +219,7 @@ function addSongs() {
     type: 'songs',
     body: {
       "title": "Plac'h landelo",
+      "slug": slugify("Plac'h landelo"),
       "artist": "Denez Prigent",
       "content": text,
       "date": new Date()
@@ -226,6 +234,7 @@ function addSongs() {
     type: 'songs',
     body: {
       "title": "Gwerz Ar Vezhinerien",
+      "slug": slugify("Gwerz Ar Vezhinerien"),
       "artist": "Denez Abernot",
       "content": text,
       "date": new Date()
@@ -242,6 +251,7 @@ function addSongs() {
     type: 'songs',
     body: {
       "title": "An Hini A Garan",
+      "slug": slugify("An Hini A Garan"),
       "artist": "Denez Prigent",
       "content": text,
       "date": new Date()
@@ -249,9 +259,6 @@ function addSongs() {
   },function(err,resp,status) {
       console.log(resp);
   });
-
-
-
 
 
 }

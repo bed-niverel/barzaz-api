@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var slugify = require('slugify');
 
 var elasticsearch = require('elasticsearch');
 
@@ -52,6 +53,9 @@ router.put('/song/edit', function(req, res, next) {
 	console.log(id);
 	console.log(title, artist, link, content);
 
+
+	var slug = slugify(title);
+
 	client.update({  
 	  index: 'music',
 	  type: 'songs',
@@ -59,6 +63,7 @@ router.put('/song/edit', function(req, res, next) {
 	  body: {
 	  	doc: {
 				"title": title,
+				"slug": slug,
 		    "artist": artist,
 		    "link": link,
 		    "content": content
@@ -76,12 +81,16 @@ router.put('/song/add', function(req, res, next) {
 	var artist = req.body.artist;
 	var content = req.body.content;
 	var link = req.body.link;
+
+	var slug = slugify(title);
+
 	console.log(title, artist, link, content);
 	client.index({  
 	  index: 'music',
 	  type: 'songs',
 	  body: {
 	    "title": title,
+	    "slug": slug,
 	    "artist": artist,
 	   	"link": link,
 	    "content": content,
@@ -372,16 +381,16 @@ router.get('/artistsByAlphabet/:letter', function(req, res, next) {
 })
 
 router.get('/song/:songid', function(req, res, next) {
-	var title = req.params.songid;
+	var slug = req.params.songid;
 	//title = title.toLowerCase();
-	console.log(title);
+	//console.log(title);
 	client.search({
 	  index: 'music',
 	  type: 'songs',
 	  body: {
 	    query: {
 	      match: {
-	        "title.exact": title
+	        "slug": slug
 	      }
 	    }
 	  }
