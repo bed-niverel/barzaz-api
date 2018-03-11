@@ -1,13 +1,13 @@
-var express = require('express');
-var router = express.Router();
-var slugify = require('slugify');
+const express = require('express');
+const router = express.Router();
+const slugify = require('slugify');
 
-var elasticsearch = require('elasticsearch');
+const elasticsearch = require('elasticsearch');
 
-var fs = require('fs');
+const fs = require('fs');
 
-var Bluebird = require('bluebird');
-var client = new elasticsearch.Client({
+const Bluebird = require('bluebird');
+const client = new elasticsearch.Client({
   defer: function () {
     return Bluebird.defer();
   }
@@ -35,7 +35,7 @@ router.get('/latestSongs', function(req, res, next) {
 	    ]
 		}
 	}).then(function (resp) {
-	  var hits = resp.hits.hits;
+	  var resp = formatResponse(resp);
 	  res.send(resp);
 	}, function (err) {
 		return res.send(err);
@@ -62,15 +62,15 @@ router.put('/song/edit', function(req, res, next) {
 	  id: id,
 	  body: {
 	  	doc: {
-				"title": title,
-				"slug": slug,
+			"title": title,
+			"slug": slug,
 		    "artist": artist,
 		    "link": link,
 		    "content": content
 	  	}    
 	  }
 	},function(err,resp,status) {
-			console.log(err, resp, status);
+		console.log(err, resp, status);
 	    res.send();																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										
 	});
 })
@@ -81,7 +81,6 @@ router.put('/song/add', function(req, res, next) {
 	var artist = req.body.artist;
 	var content = req.body.content;
 	var link = req.body.link;
-
 	var slug = slugify(title);
 
 	console.log(title, artist, link, content);
@@ -97,11 +96,41 @@ router.put('/song/add', function(req, res, next) {
 	    "date": new Date()
 	  }
 	},function(err,resp,status) {
+		createArtist(artist);
 	    res.send();																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										
 	});
-
-
 })
+
+
+function createArtist(artist) {
+	client.search({
+	  index: 'artists',
+	  type: 'artists',
+	  body: {
+		"query": {
+			"term" : { "name" : artist } 
+		}
+	  }
+	}).then(function (resp) {
+	    var hits = resp.hits.hits;
+	    if (hits.length == 0) {
+			client.index({
+			  index: 'artists',
+			  type: 'artists',
+			  body: {
+			    "name": artist
+			  }
+			}).then(function (resp) {
+				return;
+			})
+	    } else {
+	    	return;
+	    }
+	}, function (err) {
+	    console.trace(err.message);
+	});
+
+}
 
 router.get('/findSongsByTitle', function(req, res, next) {
 
@@ -126,7 +155,6 @@ router.get('/findSongsByTitle', function(req, res, next) {
 
 });
 
-/* GET users listing. */
 router.get('/findSongsByArtist', function(req, res, next) {
 	var artist = req.query.term;
 
@@ -176,7 +204,7 @@ router.get('/autocompleteTitles', function(req, res, next) {
 });
 
 
-router.get('/autocomplete2', function(req, res, next) {
+router.get('/autocomplete', function(req, res, next) {
 	var content = req.query.term;
 	content = content.toLowerCase();
 
@@ -247,41 +275,15 @@ router.get('/random', function(req, res, next) {
 			}
 		}
 	}).then(function (resp) {
-		console.log(resp);
-    var hits = resp.hits.hits;
-    res.send(resp);
+		resp = formatResponse(resp);
+		res.send(resp);
 	}, function (err) {
 		console.trace(err.message);
 	});
 
 })
 
-/*
 
-curl -XGET 'localhost:9200/_search?pretty' -H 'Content-Type: application/json' -d'
-{
-  "query": {
-    "multi_match" : {
-      "query":    "Denez peskig", 
-      "fields": [ "title", "artist" ] 
-    }
-  },
-  "highlight": {
-            "fields" : {
-                "title" : {},
-                 "artist": {}
-            }
-        }
-
-}
-'
-
-*/
-
-
-
-
-/* GET users listing. */
 router.get('/findSongsByTerms', function(req, res, next) {
 	var content = req.query.term;
 
@@ -307,13 +309,14 @@ router.get('/findSongsByTerms', function(req, res, next) {
 
 router.get('/artists/:artistid/songs', function(req, res, next) {
 	var artist = req.params.artistid;
+	console.log(artist);
 	client.search({
 	  index: 'music',
 	  type: 'songs',
 	  body: {
 	    query: {
-	      match: {
-	        artist: artist
+	      term: {
+	        "artist.exact": artist
 	      }
 	    }
 	  }
@@ -321,7 +324,7 @@ router.get('/artists/:artistid/songs', function(req, res, next) {
 	    var hits = resp.hits.hits;
 	    var array = [];
 	    for (var i = 0 ; i < hits.length ; i++) {
-	    	array.push(hits[i]._source.title);
+	    	array.push({title: hits[i]._source.title, slug: hits[i]._source.slug});
 	    }
 	    res.send(array);
 	}, function (err) {
@@ -335,7 +338,7 @@ router.get('/artistsByAlphabet/:letter', function(req, res, next) {
 
 
 	client.search({
-	  index: 'music',
+	  index: 'artists',
 	  type: 'artists',
 	  body: {
 	    query: {
@@ -395,12 +398,23 @@ router.get('/song/:songid', function(req, res, next) {
 	    }
 	  }
 	}).then(function (resp) {
-			console.log(resp);
-	    var hits = resp.hits.hits;
+		resp = formatResponse(resp);
 	    res.send(resp);
 	}, function (err) {
 	    console.trace(err.message);
 	});
 })
+
+function formatResponse(response) {
+	var hits = response.hits.hits;
+	let list = [];
+	let tmp, id;
+	for (var i = 0 ; i < hits.length ; i++) {
+		tmp = hits[i]._source;
+		id = hits[i]._id;
+		list.push({id: id, title: tmp.title, slug: tmp.slug, artist : tmp.artist, content : tmp.content})
+	}
+	return list;
+}
 
 module.exports = router;

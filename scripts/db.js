@@ -1,97 +1,50 @@
-var fs = require('fs');
-var elasticsearch = require('elasticsearch');
-var slugify = require('slugify');
+const fs = require('fs');
+const elasticsearch = require('elasticsearch');
+const slugify = require('slugify');
 
 
-var Bluebird = require('bluebird');
-var client = new elasticsearch.Client({
+const Bluebird = require('bluebird');
+const client = new elasticsearch.Client({
   defer: function () {
     return Bluebird.defer();
   }
 });
 
-var text = '';
+//init the data in elasticsearch
+init();
 
 
+async function init() {
+	let response;
+	//delete the index
+	try {
+		response = 	await deleteIndex();  
+	} catch (err) {
+		console.log('elasticsearch error while deleting index', err);
+	}
+
+	//create the index, the mapping and add the data
+	try {
+		response = 	await createIndex();  
+		response = 	await addMapping();  
+		addSongs();
+	} catch (err) {
+		console.log('elasticsearch error', err);
+	}
+}
 
 
-
-/*
-client.search({
-    index: 'music',
-    type: 'songs',
-    body:{
-        "query": {
-          "query_string" : {
-            "fields" : [
-               "title",
-               "artist",
-               "content"
-            ],
-            "query" : "an hini a garan",
-            "default_operator" : "AND"
-         }
-        }
-      }
-  }).then(function (resp) {
-    console.log(JSON.stringify(resp));
-      //var hits = resp.hits.hits;
-      //res.send(resp);
-  }, function (err) {
-      console.trace(err.message);
-  });
-*/
+//Diverkañ an index
+async function deleteIndex() { 
+	return await client.indices.delete({
+	    index: "music"
+	});		    
+}
 
 
-/*
-client.search({
-    index: 'music',
-    type: 'songs',
-    body:{
-       "size": 1,
-       "query": {
-          "function_score": {
-             "functions": [
-                {
-                   "random_score": {
-                      "seed": Date.now()
-                   }
-                }
-             ]
-          }
-       }
-    }
-  }).then(function (resp) {
-    console.log(JSON.stringify(resp));
-      //var hits = resp.hits.hits;
-      //res.send(resp);
-  }, function (err) {
-      console.trace(err.message);
-  });
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-//deleteIndex();
-//createIndex();
-//addMapping();
-addSongs();
-
-
-
-//ouzhpenna~n ar mapping
-function addMapping() {
-  client.indices.putMapping({
+//ouzhpennañ ar mapping
+async function addMapping() {
+  return await client.indices.putMapping({
     index: 'music',
     type: 'songs',
     body: {
@@ -99,7 +52,6 @@ function addMapping() {
         "title": {
           "type": "text",
           "analyzer": "my_analyzer",
-          "search_analyzer": "whitespace",
           "fields": {
             "exact": { 
               "type":  "keyword"
@@ -113,31 +65,24 @@ function addMapping() {
         "artist": {
           "type": "text",
           "analyzer": "my_analyzer",
-          "search_analyzer": "whitespace"
+          "fields": {
+			"exact": { 
+				"type":  "keyword"
+		  	}
+		  }
         },
         "content": {
           "type": "text",
-          "analyzer": "my_analyzer",
-          "search_analyzer": "whitespace"
+          "analyzer": "my_analyzer"
         }
       }
     }
-  })
+  });
 }
 
 
-
-    
-//Diverka~n an index
-function deleteIndex() {  
-    return client.indices.delete({
-        index: "music"
-    });
-}
-
-
-//Kroui~n an index
-function createIndex() {
+//Krouiñ an index
+async function createIndex() {
     var settings = {
         "analysis": {
           "analyzer": {
@@ -162,7 +107,7 @@ function createIndex() {
         }
       }
     
-    return client.indices.create({
+    return await client.indices.create({
         index: 'music',
         body: {
             settings: settings
@@ -194,8 +139,10 @@ client.bulk({
 
 
 
-//Ouzhpenna~n ar c'hananouennoù
+//Ouzhpennañ ar c'hananouennoù
 function addSongs() {
+  let text = '';
+
   text = fs.readFileSync('./kanaouennoù/peskig.txt', "utf8");
   client.index({  
     index: 'music',
