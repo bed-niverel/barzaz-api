@@ -10,6 +10,8 @@ const client = new elasticsearch.Client({
   }
 });
 
+
+
 //init the data in elasticsearch
 init();
 
@@ -18,6 +20,7 @@ async function init() {
 	let response;
 	//delete the index
 	try {
+		console.log("deleting index");
 		response = 	await deleteIndex();  
 	} catch (err) {
 		console.log('elasticsearch error while deleting index', err);
@@ -25,7 +28,9 @@ async function init() {
 
 	//create the index, the mapping and add the data
 	try {
+		console.log("creating index");
 		response = 	await createIndex();  
+		console.log("mapping data");
 		response = 	await addMapping();  
 		addSongs();
 	} catch (err) {
@@ -100,7 +105,8 @@ async function createIndex() {
               "max_gram": 10,
               "token_chars": [
                 "letter",
-                "digit"
+                "digit",
+                "punctuation"
               ]
             }
           }

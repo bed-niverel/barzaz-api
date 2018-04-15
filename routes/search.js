@@ -203,10 +203,39 @@ router.get('/autocompleteTitles', function(req, res, next) {
 
 });
 
+router.get('/autocompleteArtists', function(req, res, next) {
+	var content = req.query.term;
+	content = content.toLowerCase();
+
+	client.search({
+	  index: 'music',
+	  type: 'songs',
+	  body: {
+	    query: {
+        "query_string" : {
+          "fields" : [
+             "artist"
+          ],
+          "query" : content,
+          "default_operator" : "AND"
+        }
+	    }
+	  }
+	}).then(function (resp) {
+	    var hits = resp.hits.hits;
+	    res.send(resp);
+	}, function (err) {
+	    console.trace(err.message);
+	});
+
+});
+
 
 router.get('/autocomplete', function(req, res, next) {
 	var content = req.query.term;
 	content = content.toLowerCase();
+	content = content.trim();
+	content = content.replace(/\s/g, " AND ");
 
 	console.log(content);
 
@@ -412,7 +441,7 @@ function formatResponse(response) {
 	for (var i = 0 ; i < hits.length ; i++) {
 		tmp = hits[i]._source;
 		id = hits[i]._id;
-		list.push({id: id, title: tmp.title, slug: tmp.slug, artist : tmp.artist, content : tmp.content})
+		list.push({id: id, title: tmp.title, slug: tmp.slug, artist : tmp.artist, content : tmp.content, link: tmp.link});
 	}
 	return list;
 }

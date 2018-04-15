@@ -1,6 +1,23 @@
-Ur wech pellgarget ar raktres, mont e-barzh hag ober : npm install
+Ezhomm a zo :
+- Staliañ Node.js
+- Staliañ ElasticSearch
 
-Evit loc'hañ ar servijer :
+Pellgargañ ha staliañ Node.js : 
+
+https://nodejs.org/en/
+
+Evit gouzout ma 'z eo staliet mat, digeriñ un terminal (klask "cmd" e windows pe "open terminal" war linux) ha skrivañ : node -v
+
+
+Ur wech pellgarget ar raktres barzaz-api, mont e-barzh an doser hag ober gant an terminal : npm install
+Servijout a ra da staliañ an dependencies
+
+Loc'hañ ElasticSearch :
+Mont en doser ElasticSearch, en doser `bin` ha lansañ an `elasticsearch.bat` (windows) pe `elasticsearch.sh` (linux)
+
+
+Evit loc'hañ an API (atav en terminal) :
+Mont en doser barzaz-api
 
 `cd bin`
 
