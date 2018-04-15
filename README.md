@@ -6,10 +6,11 @@ Pellgargañ ha staliañ Node.js :
 
 https://nodejs.org/en/
 
-Evit gouzout ma 'z eo staliet mat, digeriñ un terminal (klask "cmd" e windows pe "open terminal" war linux) ha skrivañ : node -v
+Evit gouzout ma 'z eo staliet mat, digeriñ un terminal (klask "cmd" e windows pe "open terminal" war linux) ha skrivañ : `node -v`
 
+Pellgargañ ElasticSearch : https://www.elastic.co/fr/products/elasticsearch
 
-Ur wech pellgarget ar raktres barzaz-api, mont e-barzh an doser hag ober gant an terminal : npm install
+Ur wech pellgarget ar raktres barzaz-api, mont e-barzh an doser hag ober gant an terminal : `npm install`
 Servijout a ra da staliañ an dependencies
 
 Loc'hañ ElasticSearch :
