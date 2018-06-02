@@ -8,6 +8,7 @@ const fs = require('fs');
 
 const Bluebird = require('bluebird');
 const client = new elasticsearch.Client({
+  host:'127.0.0.1:9200',
   defer: function () {
     return Bluebird.defer();
   }
@@ -26,8 +27,8 @@ var client = new elasticsearch.Client({
 router.get('/latestSongs', function(req, res, next) {
 
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	  	"from" : 0, "size" : 3,
 	    "sort" : [
@@ -57,8 +58,8 @@ router.put('/song/edit', function(req, res, next) {
 	var slug = slugify(title);
 
 	client.update({  
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  id: id,
 	  body: {
 	  	doc: {
@@ -85,8 +86,8 @@ router.put('/song/add', function(req, res, next) {
 
 	console.log(title, artist, link, content);
 	client.index({  
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    "title": title,
 	    "slug": slug,
@@ -105,7 +106,7 @@ router.put('/song/add', function(req, res, next) {
 function createArtist(artist) {
 	client.search({
 	  index: 'artists',
-	  type: 'artists',
+	  type: 'artist',
 	  body: {
 		"query": {
 			"term" : { "name" : artist } 
@@ -137,8 +138,8 @@ router.get('/findSongsByTitle', function(req, res, next) {
 	var title = req.query.term;
 
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    query: {
 	      match: {
@@ -159,8 +160,8 @@ router.get('/findSongsByArtist', function(req, res, next) {
 	var artist = req.query.term;
 
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    query: {
 	      match: {
@@ -181,8 +182,8 @@ router.get('/autocompleteTitles', function(req, res, next) {
 	content = content.toLowerCase();
 
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    query: {
         "query_string" : {
@@ -208,8 +209,8 @@ router.get('/autocompleteArtists', function(req, res, next) {
 	content = content.toLowerCase();
 
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    query: {
         "query_string" : {
@@ -231,64 +232,111 @@ router.get('/autocompleteArtists', function(req, res, next) {
 });
 
 
-router.get('/autocomplete', function(req, res, next) {
-	var content = req.query.term;
+router.get('/autocomplete', async function(req, res, next) {
+	let content = req.query.term;
 	content = content.toLowerCase();
-	content = content.trim();
-	content = content.replace(/\s/g, " AND ");
+
 
 	console.log(content);
 
+	//let resp = await searchSongs(content);
+	let resp = await Promise.all([searchSongs(content), searchArtists(content)]);
+	console.log(resp);
+	res.send(resp);
+
+
+	/*
 	client.search({
-	  index: 'music',
-	  type: 'songs',
-	  body:{
-			  "query": {
-			  	/*
-			    "multi_match" : {
-			      "query":    content, 
-			      "fields": [ "title", "artist","content"] 
-			    }
-			    */
-          "query_string" : {
-            "fields" : [
-               "title^5",
-               "artist^5",
-               "content"
-            ],
-            "query" : content,
-            "default_operator" : "AND"
-         }
+		index: 'music',
+	  	type: 'songs',
+	  	body:{
+			"query": {
+				"query_string" : {
+					"fields" : [
+						"title^5",
+						"artist^5",
+						"content"
+					],
+					"query" : content,
+					"default_operator" : "AND"
+				}
 
-			  }
-			  /*
-			  ,
-			  "highlight": {
-            "fields" : {
-                "title" : {},
-                //"title": { "fragment_size" :content.length},
-                "artist": {},
-                "content": {}
-
-            }
-        }*/
 			}
-
+		}
 	}).then(function (resp) {
 	    //var hits = resp.hits.hits;
-	    console.log(JSON.stringify(resp.hits));
+	    console.log(JSON.stringify(resp));
+	    //console.log(JSON.stringify(resp.hits));
 	    res.send(resp);
 	}, function (err) {
 	    console.trace(err.message);
 	});
+	*/
 
 });
+
+
+async function searchSongs(content) {
+	content = content.trim();
+	content = content.replace(/\s/g, " AND ");
+
+	try {
+		let response = await client.search({
+			index: 'songs',
+		  	type: 'song',
+		  	body:{
+				"query": {
+					"query_string" : {
+						"fields" : [
+							"title^5",
+							"artist^5",
+							"content"
+						],
+						"query" : content,
+						"default_operator" : "AND"
+					}
+
+				}
+			}
+
+		})
+		console.log(response);
+		return response;
+	} catch (error) {
+    	throw(error);
+	}
+}
+
+async function searchArtists(content) {
+
+	try {
+		let response = await client.search({
+			index: 'artists',
+			type: 'artist',
+			body: {
+				query: {
+			      match: {
+			        "name": content
+			      }
+			    }
+			}
+		})
+		console.log("artists");
+		console.log(JSON.stringify(response));
+		return response;
+	} catch (error) {
+    	throw(error);
+	}
+}
+
+
+
 
 router.get('/random', function(req, res, next) {
 
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body:{
 			"size": 1,
 			"query": {
@@ -317,8 +365,8 @@ router.get('/findSongsByTerms', function(req, res, next) {
 	var content = req.query.term;
 
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    query: {
 	      match: {
@@ -340,8 +388,8 @@ router.get('/artists/:artistid/songs', function(req, res, next) {
 	var artist = req.params.artistid;
 	console.log(artist);
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    query: {
 	      term: {
@@ -368,7 +416,7 @@ router.get('/artistsByAlphabet/:letter', function(req, res, next) {
 
 	client.search({
 	  index: 'artists',
-	  type: 'artists',
+	  type: 'artist',
 	  body: {
 	    query: {
     		"prefix" : { "name" : letter }
@@ -417,8 +465,8 @@ router.get('/song/:songid', function(req, res, next) {
 	//title = title.toLowerCase();
 	//console.log(title);
 	client.search({
-	  index: 'music',
-	  type: 'songs',
+	  index: 'songs',
+	  type: 'song',
 	  body: {
 	    query: {
 	      match: {

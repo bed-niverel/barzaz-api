@@ -21,7 +21,8 @@ async function init() {
 	//delete the index
 	try {
 		console.log("deleting index");
-		response = 	await deleteIndex();  
+		response = 	await deleteSongsIndex();  
+		response = 	await deleteArtistsIndex();  
 	} catch (err) {
 		console.log('elasticsearch error while deleting index', err);
 	}
@@ -29,29 +30,39 @@ async function init() {
 	//create the index, the mapping and add the data
 	try {
 		console.log("creating index");
-		response = 	await createIndex();  
+		response = 	await createSongsIndex();
+		response = 	await createArtistsIndex();    
 		console.log("mapping data");
 		response = 	await addMapping();  
 		addSongs();
+		addArtists();
 	} catch (err) {
 		console.log('elasticsearch error', err);
 	}
 }
 
 
-//Diverkañ an index
-async function deleteIndex() { 
+//Diverkañ an index songs
+async function deleteSongsIndex() { 
 	return await client.indices.delete({
-	    index: "music"
+	    index: "songs"
 	});		    
 }
+
+//Diverkañ an index artists
+async function deleteArtistsIndex() { 
+	return await client.indices.delete({
+	    index: "artists"
+	});		    
+}
+
 
 
 //ouzhpennañ ar mapping
 async function addMapping() {
   return await client.indices.putMapping({
-    index: 'music',
-    type: 'songs',
+    index: 'songs',
+    type: 'song',
     body: {
       "properties": {
         "title": {
@@ -87,7 +98,7 @@ async function addMapping() {
 
 
 //Krouiñ an index
-async function createIndex() {
+async function createSongsIndex() {
     var settings = {
         "analysis": {
           "analyzer": {
@@ -114,7 +125,42 @@ async function createIndex() {
       }
     
     return await client.indices.create({
-        index: 'music',
+        index: 'songs',
+        body: {
+            settings: settings
+        }
+    });
+}
+
+//Krouiñ an index
+async function createArtistsIndex() {
+    var settings = {
+        "analysis": {
+          "analyzer": {
+            "my_analyzer": {
+              "tokenizer": "my_tokenizer",
+                "filter": [
+                  "lowercase"
+                ]
+            }
+          },
+          "tokenizer": {
+            "my_tokenizer": {
+              "type": "ngram",
+              "min_gram": 2,
+              "max_gram": 10,
+              "token_chars": [
+                "letter",
+                "digit",
+                "punctuation"
+              ]
+            }
+          }
+        }
+      }
+    
+    return await client.indices.create({
+        index: 'artists',
         body: {
             settings: settings
         }
@@ -151,8 +197,8 @@ function addSongs() {
 
   text = fs.readFileSync('./kanaouennoù/peskig.txt', "utf8");
   client.index({  
-    index: 'music',
-    type: 'songs',
+    index: 'songs',
+    type: 'song',
     body: {
       "title": "Peskig arc'hant",
       "slug": slugify("Peskig arc'hant"),
@@ -168,8 +214,8 @@ function addSongs() {
   text = fs.readFileSync('./kanaouennoù/landelo.txt', "utf8");
 
   client.index({  
-    index: 'music',
-    type: 'songs',
+    index: 'songs',
+    type: 'song',
     body: {
       "title": "Plac'h landelo",
       "slug": slugify("Plac'h landelo"),
@@ -183,8 +229,8 @@ function addSongs() {
 
   text = fs.readFileSync('./kanaouennoù/bejinerien.txt', "utf8");
   client.index({  
-    index: 'music',
-    type: 'songs',
+    index: 'songs',
+    type: 'song',
     body: {
       "title": "Gwerz Ar Vezhinerien",
       "slug": slugify("Gwerz Ar Vezhinerien"),
@@ -200,8 +246,8 @@ function addSongs() {
 
   text = fs.readFileSync('./kanaouennoù/anhiniagaran.txt', "utf8");
   client.index({  
-    index: 'music',
-    type: 'songs',
+    index: 'songs',
+    type: 'song',
     body: {
       "title": "An Hini A Garan",
       "slug": slugify("An Hini A Garan"),
@@ -213,6 +259,48 @@ function addSongs() {
       console.log(resp);
   });
 
+
+}
+
+
+//Ouzhpennañ ar c'hananouennoù
+function addArtists() {
+
+	client.index({  
+		index: 'artists',
+		type: 'artist',
+		body: {
+		  "name": "Denez Abernot",
+		  "slug": slugify("Denez Abernot"),
+		  "date": new Date()
+		}
+	},function(err,resp,status) {
+		console.log(resp);
+	});
+
+	client.index({  
+	    index: 'artists',
+	    type: 'artist',
+	    body: {
+	      "name": "Denez Prigent",
+	      "slug": slugify("Denez Prigent"),
+	      "date": new Date()
+	    }
+	},function(err,resp,status) {
+		console.log(resp);
+	});
+
+	client.index({  
+	    index: 'artists',
+	    type: 'artist',
+	    body: {
+	      "name": "Naig Rozmor",
+	      "slug": slugify("Naig Rozmor"),
+	      "date": new Date()
+	    }
+	},function(err,resp,status) {
+		console.log(resp);
+	});
 
 }
 
